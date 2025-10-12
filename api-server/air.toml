@@ -1,0 +1,17 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/app ./main.go"
+bin = "tmp/app"
+full_bin = "./tmp/app"
+include_ext = ["go"]
+exclude_dir = ["bin", "tmp", "vendor"]
+delay = 1000
+run_args = []
+
+[color]
+main = "yellow"
+watcher = "cyan"
+build = "green"
+runner = "blue"
