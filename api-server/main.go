@@ -5,11 +5,16 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/sohel902833/go-kubernetise-api-server/src/database"
+	"github.com/sohel902833/go-kubernetise-api-server/src/initialization"
 	"github.com/sohel902833/go-kubernetise-api-server/src/routes"
 )
 
 func main() {
 	app := fiber.New()
+	initialization.Init();
+	// Connect DB and Redis
+	database.Connect()
 
 	// Define a test route
 	app.Get("/", func(c *fiber.Ctx) error {
