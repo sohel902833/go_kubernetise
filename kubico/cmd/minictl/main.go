@@ -122,8 +122,6 @@ func main() {
 	rootCmd.AddCommand(deleteCmd())
 	rootCmd.AddCommand(describeCmd())
 	rootCmd.AddCommand(logsCmd())
-	
-
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -146,19 +144,21 @@ func getCmd() *cobra.Command {
 	})
 
 	cmd.AddCommand(&cobra.Command{
+		Use:     "replicasets [NAME]",
+		Aliases: []string{"rs"},
+		Short:   "Get replicasets",
+		Run:     getReplicaSets,
+	})
+
+	cmd.AddCommand(&cobra.Command{
 		Use:   "nodes [NAME]",
 		Short: "Get nodes",
 		Run:   getNodes,
 	})
 
-	cmd.AddCommand(&cobra.Command{
-		Use:   "replicasets [NAME]",
-		Short: "Get replicasets",
-		Aliases: []string{"rs"},
-		Run:   getReplicaSets,
-	})
 	return cmd
 }
+
 
 // applyCmd creates the 'apply' command
 func applyCmd() *cobra.Command {
@@ -269,7 +269,27 @@ func applyConfig(filename string) {
 		return
 	}
 
+	var resource struct {
+		Kind string `yaml:"kind"`
+	}
+	if err := yaml.Unmarshal(data, &resource); err != nil {
+		fmt.Printf("Error parsing YAML: %v\n", err)
+		return
+	}
+	
+
+	switch resource.Kind {
+	case "Pod":
+		applyPod(data)
+	case "ReplicaSet":
+		applyReplicaSet(data)
+	default:
+		fmt.Printf("Unknown resource kind: %s\n", resource.Kind)
+	}
+}
+func applyPod(data []byte) {
 	var pod types.Pod
+	
 	if err := yaml.Unmarshal(data, &pod); err != nil {
 		fmt.Printf("Error parsing YAML: %v\n", err)
 		return
@@ -280,7 +300,6 @@ func applyConfig(filename string) {
 		fmt.Printf("Error marshaling JSON: %v\n", err)
 		return
 	}
-
 	resp, err := http.Post(
 		fmt.Sprintf("%s/api/v1/pods", apiServerURL),
 		"application/json",
@@ -300,6 +319,38 @@ func applyConfig(filename string) {
 	}
 }
 
+// applyReplicaSet applies a replicaset configuration
+func applyReplicaSet(data []byte) {
+	var pod types.ReplicaSet
+	if err := yaml.Unmarshal(data, &pod); err != nil {
+		fmt.Printf("Error parsing YAML: %v\n", err)
+		return
+	}
+	jsonData, err := json.Marshal(pod)
+	if err != nil {
+		fmt.Printf("Error marshaling JSON: %v\n", err)
+		return
+	}
+
+	resp, err := http.Post(
+		fmt.Sprintf("%s/api/v1/replicasets", apiServerURL),
+		"application/json",
+		bytes.NewBuffer(jsonData),
+	)
+	if err != nil {
+		fmt.Printf("Error creating replicaset: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusCreated {
+		fmt.Printf("ReplicaSet %s created successfully\n",pod.Metadata.Name)
+	} else {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Printf("Error: %s\n", string(body))
+	}
+}
+
 // deleteResource deletes a resource
 func deleteResource(cmd *cobra.Command, args []string) {
 	resource := args[0]
@@ -309,6 +360,8 @@ func deleteResource(cmd *cobra.Command, args []string) {
 	switch resource {
 	case "pod", "pods":
 		url = fmt.Sprintf("%s/api/v1/pods/%s", apiServerURL, name)
+	case "replicaset", "replicasets", "rs":
+		url = fmt.Sprintf("%s/api/v1/replicasets/%s", apiServerURL, name)
 	case "node", "nodes":
 		url = fmt.Sprintf("%s/api/v1/nodes/%s", apiServerURL, name)
 	default:
@@ -351,6 +404,14 @@ func describeResource(cmd *cobra.Command, args []string) {
 			return
 		}
 		printPodDetails(pod)
+	case "replicaset", "replicasets", "rs":
+		_, err := fetchReplicaSet(name)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		fmt.Println("TODO:Need to implement replica set describe")
+		// printReplicaSetDetails(rs)
 	case "node", "nodes":
 		node, err := fetchNode(name)
 		if err != nil {

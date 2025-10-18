@@ -5,6 +5,7 @@ BINARY_DIR=bin
 API_BINARY=$(BINARY_DIR)/apiserver
 SCHEDULER_BINARY=$(BINARY_DIR)/scheduler
 KUBELET_BINARY=$(BINARY_DIR)/kubelet
+CONTROLLER_BINARY=$(BINARY_DIR)/controller
 CLI_BINARY=$(BINARY_DIR)/minictl
 
 # Go parameters
@@ -19,7 +20,7 @@ GOMOD=$(GOCMD) mod
 all: clean build
 
 # Build all components
-build: build-api build-scheduler build-kubelet build-cli
+build: build-api build-scheduler build-kubelet build-cli build-controller
 	@echo "✅ All components built successfully!"
 
 # Build API Server
@@ -27,6 +28,11 @@ build-api:
 	@echo "🔨 Building API Server..."
 	@mkdir -p $(BINARY_DIR)
 	$(GOBUILD) -o $(API_BINARY) cmd/apiserver/main.go
+#Build Controller
+build-controller:
+	@echo "🔨 Building Controller..."
+	@mkdir -p $(BINARY_DIR)
+	$(GOBUILD) -o $(CONTROLLER_BINARY) cmd/controller/main.go
 
 # Build Scheduler
 build-scheduler:
@@ -50,6 +56,11 @@ build-cli:
 run-api: build-api
 	@echo "🚀 Starting API Server..."
 	$(API_BINARY) --port 8080
+
+# Run Controller
+run-controller: build-controller
+	@echo "🚀 Starting Controller..."
+	$(CONTROLLER_BINARY) --api-server http://localhost:8080
 
 # Run Scheduler
 run-scheduler: build-scheduler

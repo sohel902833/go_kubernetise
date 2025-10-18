@@ -266,13 +266,34 @@ func (c *ReplicaSetController) getPodsForReplicaSet(rs *types.ReplicaSet) ([]*ty
 		}
 	}
 
+	// fmt.Println("Matchin pods",len(matchingPods))
+
 	return matchingPods, nil
 }
 
 // isPodOwnedByReplicaSet checks if a pod is owned by the given ReplicaSet
 func (c *ReplicaSetController) isPodOwnedByReplicaSet(pod *types.Pod, rs *types.ReplicaSet) bool {
+
+	// podJSON, err := json.MarshalIndent(pod, "", "  ")
+	// if err != nil {
+	// 	fmt.Println("Error marshalling pod:", err)
+	// } else {
+	// 	fmt.Println(string(podJSON))
+	// }
+
+	// rsJSON, err := json.MarshalIndent(rs, "", "  ")
+	// if err != nil {
+	// 	fmt.Println("Error marshalling replicaset:", err)
+	// } else {
+	// 	fmt.Println(string(rsJSON))
+	// }
 	// Check owner references first
 	for _, ownerRef := range pod.Metadata.OwnerReferences {
+		// fmt.Println("Owner ref kind",ownerRef.Kind);
+		// fmt.Println("Owner ref name",ownerRef.Name);
+
+		// fmt.Println("Replica set name",rs.Metadata.Name)
+
 		if ownerRef.Kind == "ReplicaSet" && ownerRef.Name == rs.Metadata.Name {
 			return true
 		}
