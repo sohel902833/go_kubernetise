@@ -287,6 +287,83 @@ func applyConfig(filename string) {
 		fmt.Printf("Unknown resource kind: %s\n", resource.Kind)
 	}
 }
+
+func applyReplicaSet(data []byte) {
+    // Unmarshal YAML into a ReplicaSet struct
+    var rs types.ReplicaSet
+    if err := yaml.Unmarshal(data, &rs); err != nil {
+        fmt.Printf("Error parsing YAML: %v\n", err)
+        return
+    }
+
+    // Marshal to JSON for sending to API
+    jsonData, err := json.Marshal(rs)
+    if err != nil {
+        fmt.Printf("Error marshaling JSON: %v\n", err)
+        return
+    }
+
+    replicaSetName := rs.Metadata.Name
+    // Check if ReplicaSet already exists
+    resp, err := http.Get(fmt.Sprintf("%s/api/v1/replicasets/%s", apiServerURL, replicaSetName))
+    if err != nil {
+        fmt.Printf("Error checking replicaset existence: %v\n", err)
+        return
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode == http.StatusOK {
+        // ReplicaSet exists → call update API
+       client := &http.Client{}
+		req, err := http.NewRequest(
+			http.MethodPut,
+			fmt.Sprintf("%s/api/v1/replicasets/%s", apiServerURL, replicaSetName),
+			bytes.NewBuffer(jsonData),
+		)
+		if err != nil {
+			fmt.Printf("Error creating PUT request: %v\n", err)
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		updateResp, err := client.Do(req)
+		if err != nil {
+			fmt.Printf("Error updating replicaset: %v\n", err)
+			return
+		}
+		defer updateResp.Body.Close()
+
+		if updateResp.StatusCode == http.StatusOK {
+			fmt.Printf("ReplicaSet %s updated successfully\n", replicaSetName)
+		} else {
+			body, _ := io.ReadAll(updateResp.Body)
+			fmt.Printf("Update error: %s\n", string(body))
+		}
+		return;
+    }else{
+	// If not found → call create API
+		createResp, err := http.Post(
+			fmt.Sprintf("%s/api/v1/replicasets", apiServerURL),
+			"application/json",
+			bytes.NewBuffer(jsonData),
+		)
+		if err != nil {
+			fmt.Printf("Error creating replicaset: %v\n", err)
+			return
+		}
+		defer createResp.Body.Close()
+
+		if createResp.StatusCode == http.StatusCreated {
+			fmt.Printf("ReplicaSet %s created successfully\n", replicaSetName)
+		} else {
+			body, _ := io.ReadAll(createResp.Body)
+			fmt.Printf("Create error: %s\n", string(body))
+		}
+	}
+
+   
+}
+
 func applyPod(data []byte) {
 	var pod types.Pod
 	
@@ -320,7 +397,7 @@ func applyPod(data []byte) {
 }
 
 // applyReplicaSet applies a replicaset configuration
-func applyReplicaSet(data []byte) {
+func applyReplicaSet2(data []byte) {
 	var pod types.ReplicaSet
 	if err := yaml.Unmarshal(data, &pod); err != nil {
 		fmt.Printf("Error parsing YAML: %v\n", err)

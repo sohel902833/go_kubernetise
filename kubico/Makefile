@@ -75,10 +75,10 @@ run-kubelet: build-kubelet
 # Run all components (requires tmux or separate terminals)
 run-all: build
 	@echo "🚀 Starting all components..."
-	@echo "Note: Run each component in separate terminals:"
-	@echo "  Terminal 1: make run-api"
-	@echo "  Terminal 2: make run-scheduler"
-	@echo "  Terminal 3: make run-kubelet"
+	make run-api &
+	make run-scheduler &
+	make run-kubelet &
+	wait
 
 # Install dependencies
 deps:
