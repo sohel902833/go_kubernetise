@@ -1,0 +1,15 @@
+meta {
+  name: get-pods
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrlV1}}/pods
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

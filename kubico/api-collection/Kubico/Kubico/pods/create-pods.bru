@@ -1,0 +1,85 @@
+meta {
+  name: create-pods
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrlV1}}/pods
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "apiVersion": "apps/v1",
+      "kind": "ReplicaSet",
+      "metadata": {
+          "name": "nginx-replicaset",
+          "labels": {
+              "app": "nginx",
+              "tier": "frontend"
+          }
+      },
+      "spec": {
+          "replicas": 3,
+          "selector": {
+              "app": "nginx",
+              "tier": "frontend"
+          },
+          "template": {
+              "metadata": {
+                  "labels": {
+                      "app": "nginx",
+                      "tier": "frontend"
+                  }
+              },
+              "spec": {
+                  "restartPolicy": "Always",
+                  "containers": [
+                      {
+                          "name": "nginx",
+                          "image": "nginx:latest",
+                          "ports": [
+                              {
+                                  "containerPort": 80,
+                                  "protocol": "TCP"
+                              }
+                          ],
+                          "env": [
+                              {
+                                  "name": "ENVIRONMENT",
+                                  "value": "production"
+                              }
+                          ],
+                          "livenessProbe": {
+                              "httpGet": {
+                                  "path": "/",
+                                  "port": 80
+                              },
+                              "initialDelaySeconds": 10,
+                              "periodSeconds": 10,
+                              "timeoutSeconds": 5,
+                              "failureThreshold": 3
+                          },
+                          "readinessProbe": {
+                              "httpGet": {
+                                  "path": "/",
+                                  "port": 80
+                              },
+                              "initialDelaySeconds": 5,
+                              "periodSeconds": 5,
+                              "timeoutSeconds": 3,
+                              "successThreshold": 1
+                          }
+                      }
+                  ]
+              }
+          }
+      }
+  }
+}
+
+settings {
+  encodeUrl: true
+}

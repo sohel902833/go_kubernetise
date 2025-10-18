@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+  labels:
+    app: nginx
+    tier: frontend
+spec:
+  # Number of desired pods
+  replicas: 3
+
+  # Label selector to identify pods managed by this ReplicaSet
+  selector:
+    app: nginx
+    tier: frontend
+
+  # Template for creating pods
+  template:
+    metadata:
+      labels:
+        app: nginx
+        tier: frontend
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          env:
+            - name: ENVIRONMENT
+              value: production
+          # Liveness probe - restart container if it fails
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # Readiness probe - mark container as ready when it passes
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
