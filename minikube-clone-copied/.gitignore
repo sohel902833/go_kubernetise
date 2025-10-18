@@ -66,5 +66,3 @@ debug
 # Air (live reload)
 .air.toml
 tmp/
-
-# minikube-clone-copied
